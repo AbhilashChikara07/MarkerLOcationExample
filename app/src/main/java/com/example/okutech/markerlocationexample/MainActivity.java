@@ -54,8 +54,7 @@ public class MainActivity extends AppCompatActivity implements
                         .flat(true)
                         .position(sydney))
                 .setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_launcher));
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(28.4595, 77.0266), 12));
+        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(28.4595, 77.0266), 12));
 
-        googleMap.setMyLocationEnabled(true);
     }
 }
