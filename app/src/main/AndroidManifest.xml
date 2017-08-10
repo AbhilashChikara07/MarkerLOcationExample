@@ -20,6 +20,9 @@
         <activity android:name=".CaptureLocation"
             android:screenOrientation="portrait"/>
 
+        <activity android:name=".ShowMapImage"
+            android:screenOrientation="portrait"/>
+
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
             android:value="AIzaSyCMqMSwHkMrl3q57sTp6qaoB8egRKsvu10"/>

@@ -12,7 +12,6 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import static com.example.okutech.markerlocationexample.R.id.map;
@@ -21,12 +20,21 @@ public class MainActivity extends AppCompatActivity implements
         OnMapReadyCallback {
 
     Button button;
+    Button takeImage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         button = (Button) findViewById(R.id.button);
+        takeImage = (Button) findViewById(R.id.takeImage);
+        takeImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, ShowMapImage.class);
+                startActivity(intent);
+            }
+        });
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -37,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(map);
+        /*--getMapAsync(this) is must required to get callbacks--*/
         mapFragment.getMapAsync(this);
 
     }
@@ -56,5 +65,11 @@ public class MainActivity extends AppCompatActivity implements
                 .setIcon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_launcher));
         googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(28.4595, 77.0266), 12));
 
+        /*--we can set map type. Like 5 types of maps are available--*/
+        googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+//        googleMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+//        googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+//        googleMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+//        googleMap.setMapType(GoogleMap.MAP_TYPE_NONE);
     }
 }
