@@ -12,9 +12,10 @@ import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -44,7 +45,6 @@ public class CaptureLocation extends SuperActivity implements
 
     double lat, lon;
     int acc;
-//    private View view;
     private SupportMapFragment fragment;
     private LinearLayout captureLL;
     private TextView accuracy;
@@ -64,19 +64,76 @@ public class CaptureLocation extends SuperActivity implements
         setContentView(R.layout.marker_demo);
         fragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         captureLL = (LinearLayout) findViewById(R.id.captureLL);
-//        ImageView locationDrawable = (ImageView) captureLL.findViewById(R.id.locationDrawable);
 
 
         captureLL.setOnClickListener(captureLLClicked);
         accuracy = (TextView) findViewById(R.id.accuracy);
-
         mLocationManager = (LocationManager) this.getSystemService(LOCATION_SERVICE);
         progress = new ProgressDialog(this);
-        progress.setMessage("Fetching your location...");
 
-        showAlertDialog();
+        checkLocationPermission();
     }
 
+    private void checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]
+                    {Manifest.permission.ACCESS_FINE_LOCATION}, 0);
+        }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        buildGoogleApiClient();
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mGoogleApiClient.disconnect();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (checkGps()) {
+            fragment.getMapAsync(this);
+            progress.setMessage("Fetching Location Please wait..");
+            progress.show();
+            flag = 0;
+        } else {
+            showAlertDialog();
+            dialog.show();
+        }
+        captureLL.setVisibility(View.GONE);
+    }
+
+    private void showAlertDialog() {
+        dialog = new AlertDialog.Builder(this)
+                .setTitle("GPS is disabled")
+                .setMessage("Show location settings?")
+                .setPositiveButton("ENABLE", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+                        Intent myIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        startActivity(myIntent);
+                        dialog.dismiss();
+                    }
+                })
+                .create();
+    }
+
+    private boolean checkGps() {
+        gps_enabled = false;
+        try {
+            gps_enabled = mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return gps_enabled;
+    }
 
     View.OnClickListener captureLLClicked = new View.OnClickListener() {
         @Override
@@ -84,8 +141,6 @@ public class CaptureLocation extends SuperActivity implements
             if (acc > 40) {
                 Toast.makeText(CaptureLocation.this, "Accuracy level is greater than 40m, Please Try Again",
                         Toast.LENGTH_SHORT).show();
-            } else {
-
             }
         }
     };
@@ -101,13 +156,6 @@ public class CaptureLocation extends SuperActivity implements
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
             return;
         }
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest,
@@ -146,30 +194,6 @@ public class CaptureLocation extends SuperActivity implements
                 });
     }
 
-    private void showAlertDialog() {
-        dialog = new AlertDialog.Builder(this)
-                .setTitle("GPS is disabled")
-                .setMessage("Show location settings?")
-                .setPositiveButton("ENABLE", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface paramDialogInterface, int paramInt) {
-                        Intent myIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                        startActivity(myIntent);
-                        dialog.dismiss();
-                    }
-                })
-                .create();
-    }
-
-    private boolean checkGps() {
-        gps_enabled = false;
-        try {
-            gps_enabled = mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return gps_enabled;
-    }
 
     @Override
     public void onMapReady(GoogleMap map) {
@@ -180,29 +204,9 @@ public class CaptureLocation extends SuperActivity implements
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(this,
                         Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
             return;
         }
         map.setMyLocationEnabled(true);
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        if (checkGps()) {
-            fragment.getMapAsync(this);
-            progress.show();
-            flag = 0;
-        } else {
-            dialog.show();
-        }
-        captureLL.setVisibility(View.GONE);
     }
 
 
@@ -214,26 +218,15 @@ public class CaptureLocation extends SuperActivity implements
                 .build();
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        buildGoogleApiClient();
-        mGoogleApiClient.connect();
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        mGoogleApiClient.disconnect();
-    }
 
     @Override
     public void onConnectionSuspended(int i) {
-
+        Log.e("onConnectionSuspended", "onConnectionSuspended");
     }
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         buildGoogleApiClient();
+        Log.e("onConnectionFailed", "onConnectionFailed");
     }
 }
